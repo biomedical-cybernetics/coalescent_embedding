@@ -1,3 +1,9 @@
+% Authors:
+% Alessandro Muscoloni, 2017
+
+% Released under MIT License
+% Copyright (c) 2017 A. Muscoloni, C. V. Cannistraci
+
 % read the edge list file
 display('Reading edge list file...')
 edges = dlmread('opsahl_11.txt');

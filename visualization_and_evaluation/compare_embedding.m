@@ -7,14 +7,10 @@ function [HD_corr, C_score] = compare_embedding(coords_1, coords_2)
 % Released under MIT License
 % Copyright (c) 2017 A. Muscoloni, J. M. Thomas, C. V. Cannistraci
 
-% References:
+% Reference:
 % A. Muscoloni, J. M. Thomas, S. Ciucci, G. Bianconi, and C. V. Cannistraci,
 % "Machine learning meets complex networks via coalescent embedding in the hyperbolic space",
-% (accepted for publication in Nature Communications), 2017.
-%
-% J. M. Thomas, A. Muscoloni, S. Ciucci, G. Bianconi, and C. V. Cannistraci,
-% "Machine learning meets network science: dimensionality reduction for fast and efficient embedding
-% of networks in the hyperbolic space", arXiv:1602.06522 [cond-mat.dis-nn], 2016.
+% Nature Communications 8, 1615 (2017). doi:10.1038/s41467-017-01825-5
 
 %%% INPUT %%%
 % coords_1, coords_2 - two hyperbolic embeddings to compare:

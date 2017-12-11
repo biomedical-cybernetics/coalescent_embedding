@@ -1,5 +1,11 @@
 function [x, ids] = create_matrix(id1, id2, weights)
 
+% Authors:
+% Alessandro Muscoloni, 2017
+
+% Released under MIT License
+% Copyright (c) 2017 A. Muscoloni, C. V. Cannistraci
+
 %%% INPUT %%%
 % id1, id2 - vectors of numbers or cells of strings such that id1(i) links to id2(i);
 %            links are considered undirected and self-loops are removed.
