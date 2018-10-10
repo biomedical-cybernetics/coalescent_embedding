@@ -13,6 +13,7 @@ unsupervisedly discloses the hidden geometry of the brain", arXiv:1705.04192
 
 NB: the mathematical formula adopted is the one named as "score_w2" in the Suppl. Algorithm 1 of the reference
 
+
 ### INPUT ###
 
 coords - 2D case: Nx1 vector containing for each sample the angular coordinates
