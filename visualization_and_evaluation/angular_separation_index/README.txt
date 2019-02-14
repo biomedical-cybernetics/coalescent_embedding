@@ -1,4 +1,4 @@
-MATLAB implementation of the angular separation score:
+MATLAB implementation of the angular separation index:
 a quantitative measure to evaluate the separation of groups
 over the circle circumference (2D) or sphere surface (3D).
 
@@ -35,15 +35,15 @@ rand_seed - [optional] seed for random number generator (default = 1)
 
 ### OUTPUT ###
 
-score - overall score in [0,1], a value 1 indicates that all the groups
+index - overall index in [0,1], a value 1 indicates that all the groups
         are perfectly separated over the circle circumference (2D) or sphere surface (3D),
-        the more the groups are mixed the more the score tends to 0, representing a worst-case scenario.
+        the more the groups are mixed the more the index tends to 0, representing a worst-case scenario.
 
-group_scores - vector containing a score in [0,1] for each group,
-               to assess its separation with respect to the other groups
+group_index - vector containing an index in [0,1] for each group,
+              to assess its separation with respect to the other groups
 
-pvalue - empirical p-value computed comparing the observed score with a null distribution
-         of scores obtained from random permutations of the coordinates
+pvalue - empirical p-value computed comparing the observed index with a null distribution
+         of indexes obtained from random permutations of the coordinates
 	 
 	 
 ### CONTACT ###

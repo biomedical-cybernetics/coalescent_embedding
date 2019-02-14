@@ -1,6 +1,6 @@
-function [score, group_scores, pvalue] = compute_angular_separation(coords, labels, show_plot, rand_reps, rand_seed)
+function [index, group_index, pvalue] = compute_angular_separation(coords, labels, show_plot, rand_reps, rand_seed)
 
-% MATLAB implementation of the angular separation score:
+% MATLAB implementation of the angular separation index:
 % a quantitative measure to evaluate the separation of groups
 % over the circle circumference (2D) or sphere surface (3D).
 
@@ -27,36 +27,38 @@ function [score, group_scores, pvalue] = compute_angular_separation(coords, labe
 % (NB: optional inputs not given or empty assume the default value)
 
 %%% OUTPUT %%%
-% score - overall score in [0,1], a value 1 indicates that all the groups
+% index - overall index in [0,1], a value 1 indicates that all the groups
 %         are perfectly separated over the circle circumference (2D) or sphere surface (3D),
-%         the more the groups are mixed the more the score tends to 0, representing a worst-case scenario.
-% group_scores - vector containing a score in [0,1] for each group,
-%                to assess its separation with respect to the other groups
-% pvalue - empirical p-value computed comparing the observed score with a null distribution
-%          of scores obtained from random permutations of the coordinates
+%         the more the groups are mixed the more the index tends to 0, representing a worst-case scenario.
+% group_index - vector containing an index in [0,1] for each group,
+%               to assess its separation with respect to the other groups
+% pvalue - empirical p-value computed comparing the observed index with a null distribution
+%          of indexes obtained from random permutations of the coordinates
 
 % check input
 narginchk(2,5)
 validateattributes(coords, {'numeric'}, {})
-if size(coords,2)==1
-    D = 2;
+N = size(coords,1);
+D = size(coords,2) + 1; 
+if D == 2
     if any(coords(:,1)<0 | coords(:,1)>2*pi)
         error('Angular coordinates must be in [0,2pi]')
     end
-elseif size(coords,2)==2
-    D = 3;
+    if N < 4
+        error('The index in 2D cannot be assessed for less than 4 samples')
+    end
+elseif D == 3
     if any(coords(:,1)<0 | coords(:,1)>2*pi)
         error('Azimuth coordinates must be in [0,2pi]')
     end
     if any(coords(:,2)<-pi/2 | coords(:,2)>pi/2)
         error('Elevation coordinates must be in [-pi/2,pi/2]')
     end
+    if N < 6
+        error('The index in 3D cannot be assessed for less than 6 samples')
+    end
 else
     error('Input coordinates must be a one-column vector (2D case) or two-columns matrix (3D case)')
-end
-N = size(coords,1);
-if N < 4
-    error('The score cannot be assessed for less than four samples')
 end
 validateattributes(labels, {'numeric','cell'}, {'vector','numel',N})
 if ~exist('show_plot','var') || isempty(show_plot)
@@ -94,25 +96,25 @@ for k = 1:M
 end
 labels = temp; clear temp;
 
-% compute score
-[score, group_scores, pvalue, score_rand] = compute_score(D, coords, labels, N, Nk, M, rand_reps, rand_str);
+% compute index
+[index, group_index, pvalue, index_rand] = compute_index(D, coords, labels, N, Nk, M, rand_reps, rand_str);
 
-% restore original labels in group scores
+% restore original labels in group index
 if isnumeric(unique_labels)
-    group_scores(:,1) = unique_labels;
+    group_index(:,1) = unique_labels;
 else
-    group_scores = num2cell(group_scores);
-    group_scores(:,1) = unique_labels(:);
+    group_index = num2cell(group_index);
+    group_index(:,1) = unique_labels(:);
 end
 
 % plot results
 if show_plot
-    plot_results(score, score_rand, pvalue)
+    plot_results(index, index_rand, pvalue)
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [score, group_scores, pvalue, score_rand] = compute_score(D, coords, labels, N, Nk, M, rand_reps, rand_str)
+function [index, group_index, pvalue, index_rand] = compute_index(D, coords, labels, N, Nk, M, rand_reps, rand_str)
 
 if D == 2
     compute_mistakes = @compute_mistakes_2D;
@@ -130,35 +132,40 @@ for i = 1:rand_reps
     mistakes_rand(:,i) = compute_mistakes(coords(idx_rand,:), labels, N, Nk, M);
 end
 
+% check
+if all(isnan(mistakes)) || all(isnan(mistakes_rand(:)))
+    error('The index could not be computed for any group.')
+end
+
 % find the worst case
 [~,idx] = max(nansum(mistakes_rand,1));
 mistakes_worst = mistakes_rand(:,idx);
 
-% compute group scores
-group_scores = zeros(M,2);
-group_scores(:,2) = 1 - mistakes./mistakes_worst;
+% compute group index
+group_index = zeros(M,2);
+group_index(:,2) = 1 - mistakes./mistakes_worst;
 
-% compute overall score
-score = 1 - nansum(mistakes)/nansum(mistakes_worst);
-score = max(score,0);
+% compute overall index
+index = 1 - nansum(mistakes)/nansum(mistakes_worst);
+index = max(index,0);
 
 % compute pvalue
-score_rand = 1 - nansum(mistakes_rand,1)./repmat(nansum(mistakes_worst),1,rand_reps);
-pvalue = (sum(score_rand >= score) + 1) / (rand_reps + 1);
+index_rand = 1 - nansum(mistakes_rand,1)./repmat(nansum(mistakes_worst),1,rand_reps);
+pvalue = (sum(index_rand >= index) + 1) / (rand_reps + 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function plot_results(score, score_rand, pvalue)
+function plot_results(index, index_rand, pvalue)
 
 % plot figure
 figure('color', 'white')
-[fy,fx] = ksdensity(score_rand);
+[fy,fx] = ksdensity(index_rand);
 plot(fx, fy, 'k', 'LineWidth', 2)
 hold on
-plot([score,score], [0,max(fy)*1.1], 'r', 'LineWidth', 2)
-set(gca,'YLim',[0,max(fy)*1.1],'XTick',0:0.1:1,'XLim',[0,max(max(fx),score)*1.1])
+plot([index,index], [0,max(fy)*1.1], 'r', 'LineWidth', 2)
+set(gca,'YLim',[0,max(fy)*1.1],'XTick',0:0.1:1,'XLim',[0,max(max(fx),index)*1.1])
 box on
-xlabel('score')
+xlabel('index')
 ylabel('probability density')
 text(1, 1.05, ['pvalue = ' num2str(pvalue)], 'Units', 'normalized', 'HorizontalAlignment', 'right')
 legend({'null distribution','observed value'},'Location','northoutside','Orientation','vertical')
@@ -216,27 +223,31 @@ azim_rank(idx) = 1:N;
 mistakes = zeros(M,1);
 for k = 1:M
     
-    if Nk(k) == 1
+    if Nk(k) < 3
         mistakes(k) = NaN;
         continue;
     end
     
-    % map the samples between the group extremes to a rectangular 2D area
-    [xy_group, xy_other] = map_samples_between_group_extremes_3D(labels==k, azim_rank, coords(:,1), coords(:,2), N, Nk(k));
-    
-    if isempty(xy_other)
-        mistakes(k) = 0;
-    else
-        % compute mistakes within the polygonal area delimited by the group samples
-        pol_idx = convhull(xy_group(:,1),xy_group(:,2));
-        [in_pol, on_pol] = inpolygon(xy_other(:,1),xy_other(:,2),xy_group(pol_idx,1),xy_group(pol_idx,2));
-        on_pol = sum(on_pol);
-        in_pol = sum(in_pol) - on_pol;
-        if in_pol > 0
-            mistakes(k) = in_pol + on_pol * (on_pol/(on_pol+in_pol));
-        else
+    try
+        % map the samples between the group extremes to a rectangular 2D area
+        [xy_group, xy_other] = map_samples_between_group_extremes_3D(labels==k, azim_rank, coords(:,1), coords(:,2), N, Nk(k));
+        
+        if isempty(xy_other)
             mistakes(k) = 0;
+        else
+            % compute mistakes within the polygonal area delimited by the group samples
+            pol_idx = convhull(xy_group(:,1),xy_group(:,2));
+            [in_pol, on_pol] = inpolygon(xy_other(:,1),xy_other(:,2),xy_group(pol_idx,1),xy_group(pol_idx,2));
+            on_pol = sum(on_pol);
+            in_pol = sum(in_pol) - on_pol;
+            if in_pol > 0
+                mistakes(k) = in_pol + on_pol * (on_pol/(on_pol+in_pol));
+            else
+                mistakes(k) = 0;
+            end
         end
+    catch
+        mistakes(k) = NaN;
     end
 end
 

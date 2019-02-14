@@ -30,7 +30,7 @@ https://www.nature.com/articles/s41467-017-01825-5
   - *angular_alignment.m*: align two embeddings of the same network, useful for a comparison of the plots.
   - *greedy_routing.m*: evaluate the greedy routing given the network and the coordinates.
   - *compare_embedding.m*: evaluate the comparison of two embeddings computing HD-correlation and C-score.
-  - *angular_separation_score*: evaluate the separation of groups over the circle circumference or sphere surface (for details please see the README within the subfolder).
+  - *angular_separation_index*: evaluate the separation of groups over the circle circumference or sphere surface (for details please see the README within the subfolder).
 
 * *usage_example*  
   It contains a script *RUN_EXAMPLE.m* with two usage examples, all the functions needed for the embedding, visualization and evaluation (described at the previous points) and two example networks (*opsahl_11.mat* and *PSO_network.mat*).
