@@ -132,7 +132,6 @@ for i = 1:rand_reps
     mistakes_rand(:,i) = compute_mistakes(coords(idx_rand,:), labels, N, Nk, M);
 end
 
-% check
 if all(isnan(mistakes)) || all(isnan(mistakes_rand(:)))
     error('The index could not be computed for any group.')
 end
