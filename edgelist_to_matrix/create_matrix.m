@@ -80,12 +80,12 @@ if weighted
     display(['Self-loops removed: ' num2str(sum(x_complete(speye(size(x_complete))==1)>0))])
     x_complete(speye(size(x_complete))==1) = 0;
     x_complete = x_complete + x_complete';
-    E = sum(x_complete(triu(true(size(x_complete)),1))>0);
+    E = sum(sum(x_complete>0))/2;
 else
     x_complete = sparse(node1,node2,1,N,N);
     x_complete(speye(size(x_complete))==1) = 0;
     x_complete = max(x_complete,x_complete');
-    E = sum(x_complete(triu(true(size(x_complete)),1)));
+    E = sum(sum(x_complete))/2;
     display(['Self-loops and bidirectional edge pairs removed: ' num2str(length(node1) - E)])
 end
 display(['Number of nodes: ' num2str(N)])
@@ -109,7 +109,7 @@ else
     for i = 1:ncc
         x{i} = x_complete(comp==idx(i),comp==idx(i));
         ids{i} = ids_complete(comp==idx(i));
-        E = sum((x{i}(triu(true(size(x{i})),1)))>0);
+        E = sum(sum(x{i}>0))/2;
         display(['Component ' num2str(i) ': N=' num2str(comp_size(idx(i))) ' E=' num2str(E)])
     end
 end
