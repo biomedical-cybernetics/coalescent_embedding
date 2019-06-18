@@ -28,7 +28,7 @@ show_plot - [optional] 1 or 0 to indicate whether the plot of the results has to
 
 rand_reps - [optional] repetitions for evaluating random coordinates (default = 1000)
 
-rand_seed - [optional] seed for random number generator (default = 1)
+rand_seed - [optional] nonnegative integer seed for random number generator (by default a seed is created based on the current time)
 
 (NB: optional inputs not given or empty assume the default value)
 

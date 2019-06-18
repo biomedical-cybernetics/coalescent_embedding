@@ -23,7 +23,7 @@ function [index, group_index, pvalue] = compute_angular_separation(coords, label
 % labels - N labels for the samples indicating the group membership (numeric vector or cell of strings)
 % show_plot - [optional] 1 or 0 to indicate whether the plot of the results has to be shown or not (default = 1)
 % rand_reps - [optional] repetitions for evaluating random coordinates (default = 1000)
-% rand_seed - [optional] seed for random number generator (default = 1)
+% rand_seed - [optional] nonnegative integer seed for random number generator (by default a seed is created based on the current time)
 % (NB: optional inputs not given or empty assume the default value)
 
 %%% OUTPUT %%%
@@ -72,9 +72,9 @@ else
     validateattributes(rand_reps, {'numeric'}, {'scalar','integer','positive'})
 end
 if ~exist('rand_seed','var') || isempty(rand_seed)
-    rand_str = RandStream('mt19937ar','Seed',1);
+    rand_str = RandStream('mt19937ar','Seed','shuffle');
 else
-    validateattributes(rand_seed, {'numeric'}, {'scalar','integer','positive'})
+    validateattributes(rand_seed, {'numeric'}, {'scalar','integer','nonnegative'})
     rand_str = RandStream('mt19937ar','Seed',rand_seed);
 end
 
