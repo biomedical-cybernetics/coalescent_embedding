@@ -237,13 +237,7 @@ for k = 1:M
             % compute mistakes within the polygonal area delimited by the group samples
             pol_idx = convhull(xy_group(:,1),xy_group(:,2));
             [in_pol, on_pol] = inpolygon(xy_other(:,1),xy_other(:,2),xy_group(pol_idx,1),xy_group(pol_idx,2));
-            on_pol = sum(on_pol);
-            in_pol = sum(in_pol) - on_pol;
-            if in_pol > 0
-                mistakes(k) = in_pol + on_pol * (on_pol/(on_pol+in_pol));
-            else
-                mistakes(k) = 0;
-            end
+            mistakes(k) = sum(in_pol) - sum(on_pol);
         end
     catch
         mistakes(k) = NaN;
