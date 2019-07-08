@@ -1,4 +1,4 @@
-MATLAB implementation of the angular separation index:
+MATLAB implementation of the angular separation index (ASI):
 a quantitative measure to evaluate the separation of groups
 over the circle circumference (2D) or sphere surface (3D).
 
@@ -8,10 +8,8 @@ and an usage example ("run_example.m", "example_data.mat").
 
 ### REFERENCE ###
 
-Cacciola et al. (2017), "Coalescent embedding in the hyperbolic space
-unsupervisedly discloses the hidden geometry of the brain", arXiv:1705.04192
-
-NB: the mathematical formula adopted is the one named as "score_w2" in the Suppl. Algorithm 1 of the reference
+A. Muscoloni and C. V. Cannistraci (2019), "Angular separability of data clusters or network communities
+in geometrical space and its relevance to hyperbolic embedding", arXiv:1907.00025
 
 
 ### INPUT ###
@@ -29,6 +27,8 @@ show_plot - [optional] 1 or 0 to indicate whether the plot of the results has to
 rand_reps - [optional] repetitions for evaluating random coordinates (default = 1000)
 
 rand_seed - [optional] nonnegative integer seed for random number generator (by default a seed is created based on the current time)
+
+worst_comp - [optional] 1 or 0 to indicate if the worst case should be approximated computationally or theoretically (default = 1); note that for the 3D case only the value 1 is valid
 
 (NB: optional inputs not given or empty assume the default value)
 

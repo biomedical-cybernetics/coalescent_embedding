@@ -1,18 +1,15 @@
-function [index, group_index, pvalue] = compute_angular_separation(coords, labels, show_plot, rand_reps, rand_seed)
+function [index, group_index, pvalue] = compute_angular_separation(coords, labels, show_plot, rand_reps, rand_seed, worst_comp)
 
-% MATLAB implementation of the angular separation index:
+% MATLAB implementation of the angular separation index (ASI):
 % a quantitative measure to evaluate the separation of groups
 % over the circle circumference (2D) or sphere surface (3D).
 
 % Reference:
-% Cacciola et al. (2017) "Coalescent embedding in the hyperbolic space
-% unsupervisedly discloses the hidden geometry of the brain", arXiv:1705.04192
-%
-% NB: the mathematical formula adopted is the one named as "score_w2"
-%     in the Suppl. Algorithm 1 of the Reference
+% A. Muscoloni and C. V. Cannistraci (2019), "Angular separability of data clusters or network communities
+% in geometrical space and its relevance to hyperbolic embedding", arXiv:1907.00025
 
 % Released under MIT License
-% Copyright (c) 2018 A. Muscoloni, C. V. Cannistraci
+% Copyright (c) 2019 A. Muscoloni, C. V. Cannistraci
 
 %%% INPUT %%%
 % coords - 2D case: Nx1 vector containing for each sample the angular coordinates
@@ -24,6 +21,8 @@ function [index, group_index, pvalue] = compute_angular_separation(coords, label
 % show_plot - [optional] 1 or 0 to indicate whether the plot of the results has to be shown or not (default = 1)
 % rand_reps - [optional] repetitions for evaluating random coordinates (default = 1000)
 % rand_seed - [optional] nonnegative integer seed for random number generator (by default a seed is created based on the current time)
+% worst_comp - [optional] 1 or 0 to indicate if the worst case should be approximated computationally or theoretically (default = 1)
+%              note that for the 3D case only the value 1 is valid
 % (NB: optional inputs not given or empty assume the default value)
 
 %%% OUTPUT %%%
@@ -36,7 +35,7 @@ function [index, group_index, pvalue] = compute_angular_separation(coords, label
 %          of indexes obtained from random permutations of the coordinates
 
 % check input
-narginchk(2,5)
+narginchk(2,6)
 validateattributes(coords, {'numeric'}, {})
 N = size(coords,1);
 D = size(coords,2) + 1; 
@@ -77,6 +76,14 @@ else
     validateattributes(rand_seed, {'numeric'}, {'scalar','integer','nonnegative'})
     rand_str = RandStream('mt19937ar','Seed',rand_seed);
 end
+if ~exist('worst_comp','var') || isempty(worst_comp)
+    worst_comp = 1;
+else
+    validateattributes(worst_comp, {'numeric'}, {'scalar','binary'})
+    if D == 3 && worst_comp == 0
+        error('In 3D the worst case can be approximated only computationally (worst_comp = 1)')
+    end
+end
 
 % convert labels
 unique_labels = unique(labels);
@@ -97,7 +104,7 @@ end
 labels = temp; clear temp;
 
 % compute index
-[index, group_index, pvalue, index_rand] = compute_index(D, coords, labels, N, Nk, M, rand_reps, rand_str);
+[index, group_index, pvalue, index_rand] = compute_index(D, coords, labels, N, Nk, M, rand_reps, rand_str, worst_comp);
 
 % restore original labels in group index
 if isnumeric(unique_labels)
@@ -114,7 +121,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [index, group_index, pvalue, index_rand] = compute_index(D, coords, labels, N, Nk, M, rand_reps, rand_str)
+function [index, group_index, pvalue, index_rand] = compute_index(D, coords, labels, N, Nk, M, rand_reps, rand_str, worst_comp)
 
 if D == 2
     compute_mistakes = @compute_mistakes_2D;
@@ -137,8 +144,13 @@ if all(isnan(mistakes)) || all(isnan(mistakes_rand(:)))
 end
 
 % find the worst case
-[~,idx] = max(nansum(mistakes_rand,1));
-mistakes_worst = mistakes_rand(:,idx);
+if worst_comp == 1
+    [~,idx] = max(nansum(mistakes_rand,1));
+    mistakes_worst = mistakes_rand(:,idx);
+else
+    mistakes_worst = ceil((N-Nk).*(Nk-1)./Nk);
+    mistakes_worst(Nk == 1) = NaN;
+end
 
 % compute group index
 group_index = zeros(M,2);
@@ -150,6 +162,7 @@ index = max(index,0);
 
 % compute pvalue
 index_rand = 1 - nansum(mistakes_rand,1)./repmat(nansum(mistakes_worst),1,rand_reps);
+index_rand = max(index_rand,0);
 pvalue = (sum(index_rand >= index) + 1) / (rand_reps + 1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
