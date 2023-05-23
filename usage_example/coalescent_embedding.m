@@ -60,7 +60,7 @@ end
 if any(x(speye(size(x))==1))
     error('The input matrix must be zero-diagonal.')
 end
-validateattributes(pre_weighting, {'char'}, {});
+ validateattributes(pre_weighting, {'char'}, {});
 validateattributes(dim_red, {'char'}, {});
 validateattributes(angular_adjustment, {'char'}, {});
 validateattributes(dims, {'numeric'}, {'scalar','integer','>=',2,'<=',3});
@@ -141,7 +141,8 @@ function x_RA1 = RA1_weighting(x)
 n = size(x,1);
 cn = x*x;
 deg = full(sum(x,1));
-x_RA1 = x .* (repmat(deg,n,1) + repmat(deg',1,n) + (repmat(deg,n,1) .* repmat(deg',1,n))) ./ (1 + cn);
+x_RA1 = x .* (repmat(deg,n,1) + repmat(deg',1,n) + ...
+    (repmat(deg,n,1) .* repmat(deg',1,n))) ./ (1 + cn);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -377,7 +378,8 @@ t = tic;
 x = max(x, x');
 
 % Iso-kernel computation
-kernel=graphallshortestpaths(sparse(x),'directed','false'); 
+% kernel=graphallshortestpaths(sparse(x),'directed','false'); 
+kernel=distances(graph(sparse(x))); 
 
 clear x
 kernel=max(kernel,kernel'); 
@@ -566,10 +568,10 @@ nowarn  = false;
 
 % parse command-line parameters; trap for bad input
 i=1; 
-while i<=length(varargin), 
+while i<=length(varargin) 
   argok = 1; 
-  if ischar(varargin{i}), 
-    switch varargin{i},
+  if ischar(varargin{i}) 
+    switch varargin{i}
         case 'range',        vec     = varargin{i+1}; i = i + 1;
         case 'sample',       sample  = varargin{i+1}; i = i + 1;
         case 'limit',        limit   = varargin{i+1}; i = i + 1;
@@ -580,55 +582,57 @@ while i<=length(varargin),
         otherwise, argok=0; 
     end
   end
-  if ~argok, 
+  if ~argok 
     disp(['(PLFIT) Ignoring invalid argument #' num2str(i+1)]); 
   end
   i = i+1; 
 end
-if ~isempty(vec) && (~isvector(vec) || min(vec)<=1),
+if ~isempty(vec) && (~isvector(vec) || min(vec)<=1)
 	fprintf('(PLFIT) Error: ''range'' argument must contain a vector; using default.\n');
     vec = [];
-end;
-if ~isempty(sample) && (~isscalar(sample) || sample<2),
+end
+if ~isempty(sample) && (~isscalar(sample) || sample<2)
 	fprintf('(PLFIT) Error: ''sample'' argument must be a positive integer > 1; using default.\n');
     sample = [];
-end;
-if ~isempty(limit) && (~isscalar(limit) || limit<min(x)),
+end
+if ~isempty(limit) && (~isscalar(limit) || limit<min(x))
 	fprintf('(PLFIT) Error: ''limit'' argument must be a positive value >= 1; using default.\n');
     limit = [];
-end;
-if ~isempty(xminx) && (~isscalar(xminx) || xminx>=max(x)),
+end
+if ~isempty(xminx) && (~isscalar(xminx) || xminx>=max(x))
 	fprintf('(PLFIT) Error: ''xmin'' argument must be a positive value < max(x); using default behavior.\n');
     xminx = [];
-end;
+end
 
 % reshape input vector
 x = reshape(x,numel(x),1);
 
 % select method (discrete or continuous) for fitting
 if     isempty(setdiff(x,floor(x))), f_dattype = 'INTS';
-elseif isreal(x),    f_dattype = 'REAL';
-else                 f_dattype = 'UNKN';
-end;
-if strcmp(f_dattype,'INTS') && min(x) > 1000 && length(x)>100,
+elseif isreal(x)
     f_dattype = 'REAL';
-end;
+else                 
+    f_dattype = 'UNKN';
+end
+if strcmp(f_dattype,'INTS') && min(x) > 1000 && length(x)>100
+    f_dattype = 'REAL';
+end
 
 % estimate xmin and alpha, accordingly
-switch f_dattype,
+switch f_dattype
     
-    case 'REAL',
+    case 'REAL'
         xmins = unique(x);
         xmins = xmins(1:end-1);
-        if ~isempty(xminx),
+        if ~isempty(xminx)
             xmins = xmins(find(xmins>=xminx,1,'first'));
-        end;
-        if ~isempty(limit),
+        end
+        if ~isempty(limit)
             xmins(xmins>limit) = [];
-        end;
-        if ~isempty(sample),
+        end
+        if ~isempty(sample)
             xmins = xmins(unique(round(linspace(1,length(xmins),sample))));
-        end;
+        end
         dat   = zeros(size(xmins));
         z     = sort(x);
         for xm=1:length(xmins)
@@ -637,53 +641,53 @@ switch f_dattype,
             n    = length(z);
             % estimate alpha using direct MLE
             a    = n ./ sum( log(z./xmin) );
-            if nosmall,
+            if nosmall
                 if (a-1)/sqrt(n) > 0.1
                     dat(xm:end) = [];
                     xm = length(xmins)+1; %#ok<FXSET,NASGU>
                     break;
-                end;
-            end;
+                end
+            end
             % compute KS statistic
             cx   = (0:n-1)'./n;
             cf   = 1-(xmin./z).^a;
             dat(xm) = max( abs(cf-cx) );
-        end;
+        end
         D     = min(dat);
         xmin  = xmins(find(dat<=D,1,'first'));
         z     = x(x>=xmin);
         n     = length(z); 
         alpha = 1 + n ./ sum( log(z./xmin) );
-        if finite, alpha = alpha*(n-1)/n+1/n; end; % finite-size correction
-        if n < 50 && ~finite && ~nowarn,
+        if finite, alpha = alpha*(n-1)/n+1/n; end % finite-size correction
+        if n < 50 && ~finite && ~nowarn
 %             fprintf('(PLFIT) Warning: finite-size bias may be present.\n');
-        end;
+        end
         L = n*log((alpha-1)/xmin) - alpha.*sum(log(z./xmin));
 
-    case 'INTS',
+    case 'INTS'
         
-        if isempty(vec),
+        if isempty(vec)
             vec  = (1.50:0.01:3.50);    % covers range of most practical 
-        end;                            % scaling parameters
+        end                            % scaling parameters
         zvec = zeta(vec);
 
         xmins = unique(x);
         xmins = xmins(1:end-1);
-        if ~isempty(xminx),
+        if ~isempty(xminx)
             xmins = xmins(find(xmins>=xminx,1,'first'));
-        end;
-        if ~isempty(limit),
+        end
+        if ~isempty(limit)
             limit = round(limit);
             xmins(xmins>limit) = [];
-        end;
-        if ~isempty(sample),
+        end
+        if ~isempty(sample)
             xmins = xmins(unique(round(linspace(1,length(xmins),sample))));
-        end;
+        end
         if isempty(xmins)
             fprintf('(PLFIT) Error: x must contain at least two unique values.\n');
             alpha = NaN; xmin = x(1); D = NaN; %#ok<NASGU>
             return;
-        end;
+        end
         xmax   = max(x);
         dat    = zeros(length(xmins),2);
         z      = x;
@@ -703,8 +707,8 @@ switch f_dattype,
                     % catch: force loop to default to iterative version for
                     % remainder of the search
                     fcatch = 1;
-                end;
-            end;
+                end
+            end
             if fcatch==1
                 % force iterative calculation (more memory efficient, but 
                 % can be slower)
@@ -714,11 +718,12 @@ switch f_dattype,
                 for k=1:length(vec)
                     L(k) = -vec(k)*slogz - n*log(zvec(k) - sum(xminvec.^-vec(k)));
                 end
-            end;
+            end
             [Y,I] = max(L); %#ok<ASGLU>
             % compute KS statistic
             fit = cumsum((((xmin:xmax).^-vec(I)))./ (zvec(I) - sum((1:xmin-1).^-vec(I))));
-            cdi = cumsum(hist(z,xmin:xmax)./n);
+            cdi = cumsum(histcounts(discretize(z,length(xmin:xmax)))./n);
+            % cdi = cumsum(hist(z,xmin:xmax)./n);
             dat(xm,:) = [max(abs( fit - cdi )) vec(I)];
         end
         % select the index for the minimum value of D
@@ -727,16 +732,16 @@ switch f_dattype,
         z     = x(x>=xmin);
         n     = length(z);
         alpha = dat(I,2);
-        if finite, alpha = alpha*(n-1)/n+1/n; end; % finite-size correction
-        if n < 50 && ~finite && ~nowarn,
+        if finite, alpha = alpha*(n-1)/n+1/n; end % finite-size correction
+        if n < 50 && ~finite && ~nowarn
 %             fprintf('(PLFIT) Warning: finite-size bias may be present.\n');
-        end;
+        end
         L     = -alpha*sum(log(z)) - n*log(zvec(find(vec<=alpha,1,'last')) - sum((1:xmin-1).^-alpha));
 
-    otherwise,
+    otherwise
         fprintf('(PLFIT) Error: x must contain only reals or only integers.\n');
         alpha = [];
         xmin  = [];
         L     = [];
         return;
-end;
+end
